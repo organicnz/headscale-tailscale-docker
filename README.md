@@ -22,7 +22,7 @@ All services are **running and operational**:
 
 **Don't want to use command line?**
 
-👉 **See [QUICK_START_GUI.md](QUICK_START_GUI.md)** for step-by-step GUI guide:
+👉 **See [QUICK_START_GUI.md](docs/QUICK_START_GUI.md)** for step-by-step GUI guide:
 
 1. Open Headplane web interface → Generate pre-auth key
 2. Download Tailscale app on your device
@@ -54,7 +54,7 @@ All services are **running and operational**:
   # After clone
   lefthook install
   ```
-  See [LEFTHOOK.md](LEFTHOOK.md) for details
+  See [LEFTHOOK.md](docs/LEFTHOOK.md) for details
 
 ## 🌐 Access Points
 
@@ -69,7 +69,7 @@ Once running, you can access:
 
 ### 🎨 Want to Use GUIs Instead of Command Line?
 
-**See [GUI_SETUP.md](GUI_SETUP.md)** for complete guide on:
+**See [GUI_SETUP.md](docs/GUI_SETUP.md)** for complete guide on:
 - Using Headplane web interface for server management
 - Using Tailscale desktop apps (Windows, Mac, Linux)
 - Using Tailscale mobile apps (iOS, Android)
@@ -379,7 +379,7 @@ tar -xzf headscale-backup-YYYYMMDD.tar.gz
 docker compose up -d
 ```
 
-**Note**: For production with PostgreSQL, see BEST_PRACTICES.md for database-specific backup procedures.
+**Note**: For production with PostgreSQL, see [BEST_PRACTICES.md](docs/BEST_PRACTICES.md) for database-specific backup procedures.
 
 ## 🔍 Troubleshooting
 
@@ -465,7 +465,7 @@ docker exec headscale headscale nodes expire --all-offline
 4. **Regular updates** - Keep Docker images updated
 5. **Monitor logs** - Check logs regularly for suspicious activity
 6. **Backup regularly** - Automate database backups
-7. **Use Git hooks** - Install Lefthook to prevent committing secrets (see [LEFTHOOK.md](LEFTHOOK.md))
+7. **Use Git hooks** - Install Lefthook to prevent committing secrets (see [LEFTHOOK.md](docs/LEFTHOOK.md))
 
 ## 🏗️ Architecture
 
@@ -494,11 +494,14 @@ Headscale Server (with SQLite)
 │   └── policy.json           # ACL policies with tags
 ├── headplane/
 │   └── config.yaml           # Headplane web GUI config
+├── docs/                     # Documentation
+│   ├── QUICK_START_GUI.md   # GUI-only quick start guide
+│   ├── GUI_SETUP.md         # Complete GUI guide
+│   ├── BEST_PRACTICES.md    # Production best practices
+│   └── NETWORKING.md        # Advanced networking guide
 ├── data/                     # Headscale data (SQLite DB here)
 ├── caddy-data/              # Caddy data (certificates)
-├── caddy-config/            # Caddy config cache
-├── BEST_PRACTICES.md        # Production best practices guide
-└── NETWORKING.md            # Advanced networking guide
+└── caddy-config/            # Caddy config cache
 ```
 
 ## 🔧 Helper Script Usage
