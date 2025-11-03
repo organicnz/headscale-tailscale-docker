@@ -107,16 +107,14 @@ Grant minimum required access:
 
 ### Restrict Admin Paths
 
-```caddyfile
-@admin {
-    path /admin*
-    path /api/v1/admin*
-}
+```nginx
+# Restrict admin paths to local IPs only
+location ~ ^/(admin|api/v1/admin) {
+    allow 192.168.1.0/24;
+    allow 100.64.0.0/24;
+    deny all;
 
-handle @admin {
-    @local {
-        remote_ip 192.168.1.0/24 100.64.0.0/24
-    }
+    proxy_pass http://headscale_backend;
 
     handle @local {
         reverse_proxy headscale:8080
@@ -130,10 +128,10 @@ handle @admin {
 
 ### Block Search Engine Indexing
 
-```caddyfile
-handle /robots.txt {
-    respond "User-agent: *
-Disallow: /" 200
+```nginx
+location = /robots.txt {
+    add_header Content-Type text/plain;
+    return 200 "User-agent: *\nDisallow: /\n";
 }
 ```
 

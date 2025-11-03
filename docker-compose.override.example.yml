@@ -1,40 +1,53 @@
-# Docker Compose Override Example
-# Copy this to docker-compose.override.yml for local development
-
-# This file demonstrates how to override the main docker-compose.yml
-# for development or testing purposes
+# Docker Compose Override for Local Development
+# Copy this to docker-compose.override.yml for local development:
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+#
+# This file overrides the production configuration in docker-compose.yml
+# for local development and testing without SSL/TLS.
+#
+# Changes for development:
+# - Uses nginx.conf instead of nginx.prod.conf (no SSL)
+# - Exposes HTTP on port 8000 instead of 80/443
+# - Disables certbot service (not needed for dev)
+# - Enables debug logging
+# - Optional: exposes additional debugging ports
 
 version: '3.8'
 
 services:
   headscale:
-    # Expose gRPC port for debugging
+    # Expose gRPC port for debugging (optional)
     ports:
-      - "50443:50443"
+      - 127.0.0.1:8080:8080  # Metrics
+      # Uncomment for gRPC debugging:
+      # - 50443:50443
 
-    # Enable debug logging
+    # Enable debug logging (optional)
     environment:
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=${LOG_LEVEL:-info}
 
-  caddy:
-    # Use HTTP only for local testing (no HTTPS)
-    # Uncomment if you want to test without SSL locally
-    # command: caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+  nginx:
+    # Development HTTP port (no SSL)
+    ports:
+      - 8000:8080  # Override production ports 80/443
+    volumes:
+      # Use development config (simple HTTP, no SSL)
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx
+      # Remove SSL certificate mounts (not needed for dev)
 
-    # Example: add additional ports
-    # ports:
-    #   - "8443:8443"
+  # Disable certbot for local development
+  certbot:
+    # Stop certbot in development by overriding the entrypoint
+    entrypoint: /bin/sh -c "echo 'Certbot disabled in development mode'; sleep infinity"
+    restart: "no"
 
-    # Mount custom Caddyfile for development
-    # volumes:
-    #   - ./Caddyfile.dev:/etc/caddy/Caddyfile
-
-  # Add a debug container
-  debug:
-    image: nicolaka/netshoot
-    container_name: debug-tools
-    command: sleep infinity
-    networks:
-      - headscale-network
-    # Useful for network debugging:
-    # docker exec -it debug-tools bash
+  # Optional: Add a debug container for network troubleshooting
+  # Uncomment to enable:
+  # debug:
+  #   image: nicolaka/netshoot
+  #   container_name: debug-tools
+  #   command: sleep infinity
+  #   networks:
+  #     - headscale-network
+  #   # Usage: docker exec -it debug-tools bash

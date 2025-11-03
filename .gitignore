@@ -1,13 +1,18 @@
 # Environment variables
 .env
 
+# Development override (not committed)
+docker-compose.override.yml
+
 # Headplane config with secrets
 headplane/config.yaml
 
 # Data directories
 data/
-caddy-data/
+
+# Legacy Caddy data (from migration)
 caddy-config/
+caddy-data/
 
 # PostgreSQL data
 postgres-data/

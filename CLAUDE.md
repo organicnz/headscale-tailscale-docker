@@ -8,22 +8,23 @@ This is a Docker Compose-based Headscale deployment stack. Headscale is an open-
 
 - **Headscale**: Control server for the VPN mesh network
 - **PostgreSQL**: Database backend for Headscale
-- **Caddy**: Reverse proxy (configured for local development on port 8080)
+- **nginx**: Reverse proxy (configured for local development on port 8080)
 
 ## Architecture
 
 ```
 Client Devices (Tailscale)
     ↓
-Caddy (:8080) → Headscale (:8080 internally) → PostgreSQL
+nginx (:8080) → Headscale (:8080 internally) → PostgreSQL
 ```
 
 The stack uses a bridge network (`headscale-network`) for internal communication. Headscale stores its state in PostgreSQL and serves both the control plane API and health/metrics endpoints.
 
 ## Key Configuration Files
 
-- **docker-compose.yml**: Main service definitions. Currently configured for local development (Caddy listens on port 8080)
-- **Caddyfile**: Reverse proxy configuration with health checks and proper header forwarding
+- **docker-compose.yml**: Production-ready service definitions with SSL/TLS support
+- **nginx.conf**: Production nginx configuration with HTTPS, rate limiting, and security headers
+- **nginx.dev.conf**: Development nginx configuration (HTTP only, no SSL) - used via docker-compose.override.yml
 - **config/config.yaml**: Headscale server configuration including database connection, DERP settings, DNS (MagicDNS), and IP prefixes
 - **config/acl.example.json**: Example ACL policy showing groups, tag owners, and access rules
 - **.env**: Environment variables (domain, PostgreSQL credentials, timezone)
@@ -36,13 +37,15 @@ The stack uses a bridge network (`headscale-network`) for internal communication
    - Local dev: `http://localhost:8080`
    - Production: `https://your-domain.com:443`
 
-3. **Caddy Configuration**: The current Caddyfile is set for local development (auto_https off, port 8080). For production, you'd need to enable HTTPS and use ports 80/443.
+3. **nginx Configuration**: nginx.conf is production-ready with SSL/TLS, rate limiting, and security headers. For local development, use nginx.dev.conf (simple HTTP, no SSL) via docker-compose.override.yml.
 
 ## Common Commands
 
 ### Stack Management
+
+**Production Mode** (default):
 ```bash
-# Start all services
+# Start all services with SSL/TLS
 docker compose up -d
 
 # View logs
@@ -60,33 +63,45 @@ docker compose up -d
 docker compose ps
 ```
 
+**Development Mode** (local testing without SSL):
+```bash
+# Create override file for development
+cp docker-compose.override.example.yml docker-compose.override.yml
+
+# Start with development overrides
+docker compose up -d
+
+# Services will use nginx.conf (no SSL) on port 8000
+# Access: http://localhost:8000
+```
+
 ### Headscale Management (via helper script)
 
-The `headscale.sh` script provides a wrapper for common operations:
+The `scripts/headscale.sh` script provides a wrapper for common operations:
 
 ```bash
 # User management
-./headscale.sh users list
-./headscale.sh users create <username>
-./headscale.sh users destroy <username>
+./scripts/headscale.sh users list
+./scripts/headscale.sh users create <username>
+./scripts/headscale.sh users destroy <username>
 
 # Node management
-./headscale.sh nodes list
-./headscale.sh nodes delete <node-id>
-./headscale.sh nodes expire  # expire all offline nodes
+./scripts/headscale.sh nodes list
+./scripts/headscale.sh nodes delete <node-id>
+./scripts/headscale.sh nodes expire  # expire all offline nodes
 
 # Pre-auth key management
-./headscale.sh keys list <username>
-./headscale.sh keys create <username> --reusable --expiration 24h
+./scripts/headscale.sh keys list <username>
+./scripts/headscale.sh keys create <username> --reusable --expiration 24h
 
 # Routes
-./headscale.sh routes list
-./headscale.sh routes enable <route-id>
+./scripts/headscale.sh routes list
+./scripts/headscale.sh routes enable <route-id>
 
 # Status and health
-./headscale.sh status
-./headscale.sh health
-./headscale.sh logs [lines]
+./scripts/headscale.sh status
+./scripts/headscale.sh health
+./scripts/headscale.sh logs [lines]
 ```
 
 ### Direct Docker Commands
@@ -117,10 +132,10 @@ curl http://localhost:8080/metrics
 
 ```bash
 # Initial setup (interactive configuration)
-./setup.sh
+./scripts/setup.sh
 
 # Manual backup
-./backup.sh
+./scripts/backup.sh
 
 # Connect a device to the network
 sudo tailscale up --login-server https://your-domain.com --authkey <preauth-key>
@@ -128,17 +143,24 @@ sudo tailscale up --login-server https://your-domain.com --authkey <preauth-key>
 
 ## Development Workflow
 
-1. **Local Development Mode**: The stack is currently configured for local development:
-   - Caddy serves HTTP on port 8080 (no TLS)
-   - Headscale server_url is set to `http://localhost:8080`
-   - No automatic HTTPS via Let's Encrypt
+**docker-compose.yml** is production-ready by default with SSL/TLS support.
 
-2. **Production Deployment**: To deploy to production:
-   - Update Caddyfile to enable auto_https and listen on ports 80/443
-   - Update `config/config.yaml` server_url to `https://your-domain.com:443`
-   - Ensure `.env` has correct HEADSCALE_DOMAIN
+1. **Local Development Mode**:
+   - Create development override: `cp docker-compose.override.example.yml docker-compose.override.yml`
+   - Start stack: `docker compose up -d`
+   - nginx serves HTTP on port 8000 (no TLS)
+   - Uses nginx.dev.conf (simple HTTP config, mounted via override)
+   - Headscale server_url: `http://localhost:8000`
+   - Access: http://localhost:8000
+
+2. **Production Deployment**:
+   - Update `.env` with your HEADSCALE_DOMAIN
+   - Update `config/config.yaml` server_url to `https://your-domain.com`
    - Ensure PostgreSQL password is synced between `.env` and `config/config.yaml`
-   - Ensure DNS points to the server
+   - Configure DNS to point to your server
+   - Obtain SSL certificates: `./scripts/nginx.sh ssl-init` (see docs/NGINX_CONFIGURATION.md)
+   - Start stack: `docker compose up -d` (no override file)
+   - Access: https://your-domain.com
 
 3. **ACL Policies**: To enable access control:
    - Copy `config/acl.example.json` to create your policy file

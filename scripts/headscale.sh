@@ -189,7 +189,7 @@ main() {
         status)
             check_container
             echo -e "${GREEN}Docker Container Status:${NC}"
-            docker ps | grep -E "(CONTAINER|$CONTAINER_NAME|caddy|postgres)"
+            docker ps | grep -E "(CONTAINER|$CONTAINER_NAME|nginx|postgres)"
             ;;
 
         health)

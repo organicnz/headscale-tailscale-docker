@@ -8,7 +8,7 @@ All services are **running and operational**:
 
 - ✅ **Headscale v0.27.0** - Running with SQLite database
 - ✅ **Headplane Web GUI** - Accessible at http://localhost:3001/admin/
-- ✅ **Caddy Reverse Proxy** - HTTP proxy on port 8000
+- ✅ **nginx Reverse Proxy** - HTTP proxy on port 8000
 - ✅ **Health Check** - Passing at http://localhost:8000/health
 - ✅ **API Key** - Generated and configured
 - ✅ **ACL Policies** - Tag-based security configured
@@ -36,7 +36,7 @@ All services are **running and operational**:
 
 - **Headscale v0.27.0** - Pinned version with SQLite database
 - **Headplane Web GUI** - Modern web interface for management
-- **Caddy Reverse Proxy** - HTTP/HTTPS support with automatic TLS
+- **nginx Reverse Proxy** - HTTP/HTTPS support
 - **Best Practices** - Security-focused configuration with ACL policies
 - **Tag-Based ACLs** - Organized network access control
 - **Helper Scripts** - Easy CLI management
@@ -44,8 +44,8 @@ All services are **running and operational**:
 ## 📋 Prerequisites
 
 - Docker and Docker Compose installed
-- For local testing: Nothing else needed!
-- For production: A domain name and open ports 80/443
+- For local development: Create docker-compose.override.yml from example
+- For production: A domain name with DNS pointing to your server and ports 80/443 open
 - **Recommended**: [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks (prevents committing secrets)
   ```bash
   # macOS
@@ -120,7 +120,7 @@ docker exec headscale headscale users create myuser
 
 Or use the helper script:
 ```bash
-./headscale.sh users create myuser
+./scripts/headscale.sh users create myuser
 ```
 
 ### 4. Generate a Pre-Auth Key
@@ -133,7 +133,7 @@ docker exec headscale headscale preauthkeys create --user 1 --reusable --expirat
 
 Or with helper script:
 ```bash
-./headscale.sh keys create myuser --reusable --expiration 24h
+./scripts/headscale.sh keys create myuser --reusable --expiration 24h
 ```
 
 Save this key - you'll need it to connect devices.
@@ -473,7 +473,7 @@ docker exec headscale headscale nodes expire --all-offline
 Internet
    |
    v
-Caddy Reverse Proxy (HTTP on :8000)
+nginx Reverse Proxy (HTTP on :8000)
    |
    v
 Headscale Server (with SQLite)
@@ -485,10 +485,15 @@ Headscale Server (with SQLite)
 
 ```
 .
-├── docker-compose.yml         # Main compose file
+├── docker-compose.yml         # Production-ready compose file
 ├── .env                       # Environment variables
-├── Caddyfile                  # Caddy configuration
-├── headscale.sh              # Helper script for management
+├── nginx.conf                 # Production nginx (SSL/TLS)
+├── nginx.dev.conf             # Development nginx (HTTP only)
+├── scripts/
+│   ├── nginx.sh              # nginx management script
+│   ├── headscale.sh          # Headscale management script
+│   ├── setup.sh              # Initial setup script
+│   └── backup.sh             # Backup script
 ├── config/
 │   ├── config.yaml           # Headscale configuration (SQLite)
 │   └── policy.json           # ACL policies with tags
@@ -499,9 +504,7 @@ Headscale Server (with SQLite)
 │   ├── GUI_SETUP.md         # Complete GUI guide
 │   ├── BEST_PRACTICES.md    # Production best practices
 │   └── NETWORKING.md        # Advanced networking guide
-├── data/                     # Headscale data (SQLite DB here)
-├── caddy-data/              # Caddy data (certificates)
-└── caddy-config/            # Caddy config cache
+└── data/                     # Headscale data (SQLite DB here)
 ```
 
 ## 🔧 Helper Script Usage
@@ -510,32 +513,32 @@ The included `headscale.sh` script simplifies management:
 
 ```bash
 # User management
-./headscale.sh users list
-./headscale.sh users create username
+./scripts/headscale.sh users list
+./scripts/headscale.sh users create username
 
 # Pre-auth keys
-./headscale.sh keys create username --reusable --expiration 24h
-./headscale.sh keys list username
+./scripts/headscale.sh keys create username --reusable --expiration 24h
+./scripts/headscale.sh keys list username
 
 # Node management
-./headscale.sh nodes list
-./headscale.sh nodes delete <node-id>
+./scripts/headscale.sh nodes list
+./scripts/headscale.sh nodes delete <node-id>
 
 # Routes
-./headscale.sh routes list
-./headscale.sh routes enable <route-id>
+./scripts/headscale.sh routes list
+./scripts/headscale.sh routes enable <route-id>
 
 # View status
-./headscale.sh status
-./headscale.sh health
-./headscale.sh logs 100
+./scripts/headscale.sh status
+./scripts/headscale.sh health
+./scripts/headscale.sh logs 100
 ```
 
 ## Resources
 
 - [Headscale Documentation](https://headscale.net/)
 - [Tailscale Documentation](https://tailscale.com/kb/)
-- [Caddy Documentation](https://caddyserver.com/docs/)
+- [nginx Documentation](https://nginx.org/en/docs/)
 
 ## License
 

@@ -120,7 +120,7 @@ Quick reference to all documentation files in this repository.
 ├── BEST_PRACTICES.md             ← Production best practices
 ├── NETWORKING.md                 ← Advanced networking
 ├── docker-compose.yml
-├── Caddyfile
+├── nginx.conf
 ├── .env
 ├── headscale.sh
 ├── config/

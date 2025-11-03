@@ -29,7 +29,6 @@ The following files are excluded by `.gitignore` and should NEVER be committed:
 
 - `.env` - Contains your actual passwords and configuration
 - `data/` - Contains Headscale state and keys
-- `caddy-data/` - Contains SSL certificates
 - `backups/` - Contains database backups
 
 ### 3. Production Deployment Checklist
@@ -39,7 +38,7 @@ Before exposing to the internet:
 - [ ] Changed default PostgreSQL password
 - [ ] Updated `server_url` in config.yaml to your actual domain
 - [ ] Configured proper DNS records
-- [ ] Enabled HTTPS in Caddyfile (for production)
+- [ ] Configured SSL/TLS in nginx.conf (for production)
 - [ ] Reviewed and configured ACL policies
 - [ ] Set up regular backups
 - [ ] Limited pre-auth key lifetime
@@ -51,14 +50,14 @@ Before exposing to the internet:
 - Use `--ephemeral` for temporary devices
 - Regularly audit and expire unused keys:
   ```bash
-  ./headscale.sh keys list default
+  ./scripts/headscale.sh keys list default
   ```
 
 ### 5. Network Security
 
 - The metrics endpoint (port 8080) is bound to localhost only
 - PostgreSQL is NOT exposed outside the Docker network
-- Use firewall rules to restrict access to Caddy ports
+- Use firewall rules to restrict access to nginx ports
 
 ### 6. Regular Maintenance
 
@@ -71,7 +70,7 @@ docker compose up -d
 docker compose logs -f headscale
 
 # Regular backups
-./backup.sh
+./scripts/backup.sh
 ```
 
 ## Reporting Security Issues
@@ -112,7 +111,7 @@ Encrypt backups if storing remotely:
 
 ```bash
 # Backup and encrypt
-./backup.sh
+./scripts/backup.sh
 gpg --symmetric --cipher-algo AES256 backups/database_*.sql
 ```
 
