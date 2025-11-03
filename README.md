@@ -2,47 +2,75 @@
 
 A production-ready Docker Compose setup for running your own Headscale server - an open-source, self-hosted implementation of the Tailscale control server.
 
-## Features
+## ✅ Current Status
 
-- **Headscale** - Latest version with PostgreSQL backend
-- **Caddy** - Automatic HTTPS with Let's Encrypt
-- **PostgreSQL** - Persistent database storage
-- **Health Checks** - Automatic service monitoring
-- **Security** - TLS encryption and security headers
+All services are **running and operational**:
 
-## Prerequisites
+- ✅ **Headscale v0.27.0** - Running with SQLite database
+- ✅ **Headplane Web GUI** - Accessible at http://localhost:3001/admin/
+- ✅ **Caddy Reverse Proxy** - HTTP proxy on port 8000
+- ✅ **Health Check** - Passing at http://localhost:8000/health
+- ✅ **API Key** - Generated and configured
+- ✅ **ACL Policies** - Tag-based security configured
+- ✅ **Helper Scripts** - Ready to use
+
+**Ready to connect devices!**
+
+---
+
+## 🎨 NEW: GUI-Only Quick Start!
+
+**Don't want to use command line?**
+
+👉 **See [QUICK_START_GUI.md](QUICK_START_GUI.md)** for step-by-step GUI guide:
+
+1. Open Headplane web interface → Generate pre-auth key
+2. Download Tailscale app on your device
+3. Configure custom server in the app
+4. Connect with the key
+5. Done! No terminal needed! 🎉
+
+**Perfect for**: Windows users, Mac users, mobile devices, anyone who prefers graphical interfaces
+
+## ✨ Features
+
+- **Headscale v0.27.0** - Pinned version with SQLite database
+- **Headplane Web GUI** - Modern web interface for management
+- **Caddy Reverse Proxy** - HTTP/HTTPS support with automatic TLS
+- **Best Practices** - Security-focused configuration with ACL policies
+- **Tag-Based ACLs** - Organized network access control
+- **Helper Scripts** - Easy CLI management
+
+## 📋 Prerequisites
 
 - Docker and Docker Compose installed
-- A domain name pointing to your server
-- Ports 80, 443 (TCP/UDP) open in firewall
+- For local testing: Nothing else needed!
+- For production: A domain name and open ports 80/443
 
-## Quick Start
+## 🌐 Access Points
 
-### 1. Configuration
+Once running, you can access:
 
-Copy the environment template and configure your domain:
+- **Headscale API**: http://localhost:8000
+- **🎨 Headplane Web GUI**: http://localhost:3001/admin/ ⭐ **Use this to manage everything!**
+- **Health Check**: http://localhost:8000/health
+- **Metrics**: http://localhost:8080 (direct to container)
 
-```bash
-cp .env.example .env
-```
+**Generate API Key**: `docker exec headscale headscale apikeys create`
 
-Edit `.env` and set:
-- `HEADSCALE_DOMAIN` - Your domain (e.g., `headscale.yourdomain.com`)
-- `POSTGRES_PASSWORD` - A strong password for PostgreSQL
+### 🎨 Want to Use GUIs Instead of Command Line?
 
-Edit `config/config.yaml` and update:
-- `server_url` - Must match your domain (e.g., `https://headscale.yourdomain.com:443`)
-- `database.postgres.password` - Must match your `.env` password
+**See [GUI_SETUP.md](GUI_SETUP.md)** for complete guide on:
+- Using Headplane web interface for server management
+- Using Tailscale desktop apps (Windows, Mac, Linux)
+- Using Tailscale mobile apps (iOS, Android)
+- **No command-line needed!**
 
-### 2. DNS Configuration
+## 🚀 Quick Start (Local Development)
 
-Point your domain to your server's IP address:
+This setup is **ready to run locally** on `http://localhost:8000`
 
-```
-A record: headscale.yourdomain.com -> YOUR_SERVER_IP
-```
-
-### 3. Start the Stack
+### 1. Start the Stack
 
 ```bash
 docker compose up -d
@@ -53,34 +81,87 @@ Check logs:
 docker compose logs -f
 ```
 
-### 4. Create Your First User
-
+Verify health:
 ```bash
-docker exec headscale headscale users create default
+curl http://localhost:8000/health
+# Should return: {"status":"pass"}
 ```
 
-### 5. Generate a Pre-Auth Key
+### 2. Access Headplane Web GUI
+
+Open your browser to:
+```
+http://localhost:3001/admin/
+```
+
+**Login with API Key:**
+
+Generate an API key:
+```bash
+docker exec headscale headscale apikeys create --expiration 999d
+```
+
+Copy the key and paste it into the Headplane login page.
+
+### 3. Create Your First User
+
+```bash
+docker exec headscale headscale users create myuser
+```
+
+Or use the helper script:
+```bash
+./headscale.sh users create myuser
+```
+
+### 4. Generate a Pre-Auth Key
 
 Create a reusable pre-auth key for connecting devices:
 
 ```bash
-docker exec headscale headscale preauthkeys create --user default --reusable --expiration 24h
+docker exec headscale headscale preauthkeys create --user 1 --reusable --expiration 24h
+```
+
+Or with helper script:
+```bash
+./headscale.sh keys create myuser --reusable --expiration 24h
 ```
 
 Save this key - you'll need it to connect devices.
 
-## Connecting Devices
+## 🔗 Connecting Devices
 
-### Linux/MacOS
+### Quick Connection
 
-Install Tailscale:
+**Generate a pre-auth key:**
 ```bash
-curl -fsSL https://tailscale.com/install.sh | sh
+docker exec headscale headscale preauthkeys create --user 1 --reusable --expiration 24h
 ```
 
-Connect using your Headscale server:
+**Connect any device:**
 ```bash
-sudo tailscale up --login-server https://headscale.yourdomain.com --authkey YOUR_PREAUTH_KEY
+# Linux/macOS
+sudo tailscale up --login-server http://localhost:8000 --authkey YOUR_KEY --accept-routes
+
+# Windows (PowerShell as Admin)
+tailscale up --login-server http://localhost:8000 --authkey YOUR_KEY --accept-routes
+```
+
+### 📦 Using Configuration Files
+
+For easier setup, use the pre-made configuration files in `tailscale-configs/`:
+
+- **Linux (systemd)**: Automated setup script
+- **macOS**: LaunchDaemon for auto-start
+- **Windows**: PowerShell script
+- **Docker**: Docker Compose sidecar pattern
+
+**See [tailscale-configs/README.md](tailscale-configs/README.md) for complete documentation.**
+
+Quick start:
+```bash
+cd tailscale-configs
+# Choose your platform and follow the README
 ```
 
 ### Windows
@@ -261,49 +342,60 @@ dns:
       - 8.8.8.8
 ```
 
-## Backup and Restore
+## 💾 Backup and Restore
 
-### Backup
+### Backup (SQLite)
 
 ```bash
-# Backup PostgreSQL database
-docker exec headscale-db pg_dump -U headscale headscale > backup-$(date +%Y%m%d).sql
+# Stop Headscale first to ensure consistent backup
+docker compose stop headscale
 
-# Backup configuration
-tar -czf config-backup-$(date +%Y%m%d).tar.gz config/ data/
+# Backup everything (database + configuration)
+tar -czf headscale-backup-$(date +%Y%m%d).tar.gz config/ data/ headplane/
+
+# Restart Headscale
+docker compose start headscale
 ```
 
 ### Restore
 
 ```bash
-# Restore database
-cat backup-YYYYMMDD.sql | docker exec -i headscale-db psql -U headscale
+# Stop services
+docker compose down
 
-# Restore configuration
-tar -xzf config-backup-YYYYMMDD.tar.gz
+# Restore backup
+tar -xzf headscale-backup-YYYYMMDD.tar.gz
+
+# Restart services
+docker compose up -d
 ```
 
-## Troubleshooting
+**Note**: For production with PostgreSQL, see BEST_PRACTICES.md for database-specific backup procedures.
+
+## 🔍 Troubleshooting
 
 ### Check Service Status
 
 ```bash
 docker compose ps
 docker compose logs -f headscale
+docker compose logs -f headplane
 ```
 
-### Certificate Issues
+### Headplane 404 Error
 
-If Let's Encrypt fails, check:
-1. Domain DNS is pointing correctly
-2. Ports 80 and 443 are open
-3. Check Caddy logs: `docker compose logs caddy`
+If you get a 404, make sure you're accessing the correct path:
+```
+✅ http://localhost:3001/admin/  (with trailing slash)
+❌ http://localhost:3001          (wrong - will 404)
+```
 
 ### Connection Issues
 
 Test Headscale health:
 ```bash
-curl https://headscale.yourdomain.com/health
+curl http://localhost:8000/health
+# Should return: {"status":"pass"}
 ```
 
 Check if nodes can reach server:
@@ -312,16 +404,25 @@ sudo tailscale status
 sudo tailscale netcheck
 ```
 
-### Database Connection Issues
+### Headplane Won't Load
 
-Check PostgreSQL logs:
-```bash
-docker compose logs postgres
-```
+1. Check if API key is configured in `headplane/config.yaml`
+2. Verify Headscale is running: `curl http://localhost:8000/health`
+3. Check Headplane logs: `docker logs headplane --tail 50`
+4. Ensure cookie_secret is exactly 32 characters
 
-Verify connection:
+### Database Issues
+
+Check SQLite database:
 ```bash
-docker exec -it headscale-db psql -U headscale -d headscale -c "SELECT 1;"
+# Verify database file exists
+ls -lh data/db.sqlite
+
+# Check database size
+du -h data/db.sqlite
+
+# View tables (from within container)
+docker exec headscale sqlite3 /var/lib/headscale/db.sqlite ".tables"
 ```
 
 ## Maintenance
@@ -356,33 +457,65 @@ docker exec headscale headscale nodes expire --all-offline
 5. **Monitor logs** - Check logs regularly for suspicious activity
 6. **Backup regularly** - Automate database backups
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 Internet
    |
    v
-Caddy (HTTPS/TLS)
+Caddy Reverse Proxy (HTTP on :8000)
    |
    v
-Headscale Server
+Headscale Server (with SQLite)
    |
-   v
-PostgreSQL Database
+   +-- Headplane Web GUI (:3001/admin/)
 ```
 
-## Files Structure
+## 📁 Files Structure
 
 ```
 .
-├── docker-compose.yml      # Main compose file
-├── .env                    # Environment variables
-├── Caddyfile              # Caddy configuration
+├── docker-compose.yml         # Main compose file
+├── .env                       # Environment variables
+├── Caddyfile                  # Caddy configuration
+├── headscale.sh              # Helper script for management
 ├── config/
-│   └── config.yaml        # Headscale configuration
-├── data/                  # Headscale data directory
-├── caddy-data/           # Caddy data (certificates)
-└── caddy-config/         # Caddy config cache
+│   ├── config.yaml           # Headscale configuration (SQLite)
+│   └── policy.json           # ACL policies with tags
+├── headplane/
+│   └── config.yaml           # Headplane web GUI config
+├── data/                     # Headscale data (SQLite DB here)
+├── caddy-data/              # Caddy data (certificates)
+├── caddy-config/            # Caddy config cache
+├── BEST_PRACTICES.md        # Production best practices guide
+└── NETWORKING.md            # Advanced networking guide
+```
+
+## 🔧 Helper Script Usage
+
+The included `headscale.sh` script simplifies management:
+
+```bash
+# User management
+./headscale.sh users list
+./headscale.sh users create username
+
+# Pre-auth keys
+./headscale.sh keys create username --reusable --expiration 24h
+./headscale.sh keys list username
+
+# Node management
+./headscale.sh nodes list
+./headscale.sh nodes delete <node-id>
+
+# Routes
+./headscale.sh routes list
+./headscale.sh routes enable <route-id>
+
+# View status
+./headscale.sh status
+./headscale.sh health
+./headscale.sh logs 100
 ```
 
 ## Resources

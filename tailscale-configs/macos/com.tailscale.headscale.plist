@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tailscale.headscale</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/Tailscale.app/Contents/MacOS/Tailscale</string>
+        <string>up</string>
+        <string>--login-server=http://localhost:8000</string>
+        <!-- Replace with your pre-auth key -->
+        <string>--authkey=YOUR_PREAUTH_KEY</string>
+        <!-- Optional: Accept routes -->
+        <string>--accept-routes</string>
+        <!-- Optional: Advertise as exit node -->
+        <!-- <string>--advertise-exit-node</string> -->
+        <!-- Optional: Advertise routes -->
+        <!-- <string>--advertise-routes=192.168.1.0/24</string> -->
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/tailscale-headscale.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/tailscale-headscale-error.log</string>
+</dict>
+</plist>

@@ -27,9 +27,16 @@ derp:
   update_frequency: 24h
 
 database:
-  type: sqlite
-  sqlite:
-    path: /var/lib/headscale/db.sqlite
+  type: postgres
+  postgres:
+    host: postgres
+    port: 5432
+    name: headscale
+    user: headscale
+    pass: changeme  # CHANGE THIS - must match POSTGRES_PASSWORD in .env
+    max_open_conns: 10
+    max_idle_conns: 10
+    conn_max_idle_time_secs: 3600
 
 dns:
   magic_dns: true

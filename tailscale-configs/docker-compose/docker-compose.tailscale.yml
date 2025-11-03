@@ -1,0 +1,62 @@
+version: '3.8'
+
+# Example: Connect a Docker container to your Headscale network
+# Usage: docker compose -f docker-compose.tailscale.yml up -d
+
+services:
+  # Your application
+  myapp:
+    image: nginx:alpine
+    network_mode: "service:tailscale"
+    depends_on:
+      - tailscale
+
+  # Tailscale sidecar
+  tailscale:
+    image: tailscale/tailscale:latest
+    hostname: myapp-container
+    container_name: myapp-tailscale
+    environment:
+      # REQUIRED: Your Headscale server URL
+      - TS_LOGIN_SERVER=http://YOUR_HEADSCALE_HOST:8000
+
+      # REQUIRED: Pre-auth key (generate with headscale)
+      - TS_AUTHKEY=${TS_AUTHKEY}
+
+      # State directory
+      - TS_STATE_DIR=/var/lib/tailscale
+
+      # Optional: Accept routes from other nodes
+      - TS_ACCEPT_ROUTES=true
+
+      # Optional: Advertise routes (for subnet routing)
+      # - TS_ROUTES=192.168.1.0/24
+
+      # Optional: Advertise as exit node
+      # - TS_EXIT_NODE=true
+
+      # Optional: Enable SSH
+      # - TS_SSH=true
+
+      # Optional: Custom hostname
+      # - TS_HOSTNAME=my-custom-name
+
+      # Optional: Tags (must be defined in ACL policy)
+      # - TS_EXTRA_ARGS=--advertise-tags=tag:services
+
+    volumes:
+      - tailscale-data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: unless-stopped
+    networks:
+      - default
+
+volumes:
+  tailscale-data:
+
+networks:
+  default:
+    driver: bridge
