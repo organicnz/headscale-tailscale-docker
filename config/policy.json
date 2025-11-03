@@ -1,0 +1,74 @@
+{
+  "groups": {
+    "group:admins": []
+  },
+  "tagOwners": {
+    "tag:personal": ["group:admins"],
+    "tag:servers": ["group:admins"],
+    "tag:services": ["group:admins"],
+    "tag:private": ["group:admins"],
+    "tag:semiprivate": ["group:admins"],
+    "tag:guests": ["group:admins"],
+    "tag:remote": ["group:admins"]
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["tag:personal"],
+      "dst": [
+        "tag:private:*",
+        "tag:semiprivate:*",
+        "tag:servers:22,80,443",
+        "tag:services:*"
+      ],
+      "comment": "Personal devices have full access to private services and limited server access"
+    },
+    {
+      "action": "accept",
+      "src": ["tag:servers"],
+      "dst": [
+        "tag:servers:*",
+        "tag:services:*"
+      ],
+      "comment": "Servers can communicate with each other and services"
+    },
+    {
+      "action": "accept",
+      "src": ["tag:guests"],
+      "dst": [
+        "tag:semiprivate:80,443,8080"
+      ],
+      "comment": "Guests can only access semi-private services on specific ports"
+    },
+    {
+      "action": "accept",
+      "src": ["tag:remote"],
+      "dst": [
+        "tag:servers:22",
+        "tag:services:*"
+      ],
+      "comment": "Remote backup nodes need SSH to servers and service access"
+    },
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["*:*"],
+      "comment": "Admins have full access to everything"
+    }
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["tag:personal", "group:admins"],
+      "dst": ["tag:servers"],
+      "users": ["root", "autogroup:nonroot"]
+    }
+  ],
+  "autoApprovers": {
+    "routes": {
+      "192.168.0.0/16": ["tag:servers"],
+      "10.0.0.0/8": ["tag:servers"]
+    },
+    "exitNode": ["tag:servers"]
+  }
+}

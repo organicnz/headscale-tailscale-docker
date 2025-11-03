@@ -1,0 +1,30 @@
+# Headplane Configuration
+
+# Headscale connection
+headscale:
+  url: http://headscale:8080
+  api_key: ""  # Generate with: docker exec headscale headscale apikeys create --expiration 999d
+
+# Web interface settings
+server:
+  port: 3000
+  cookie_secret: "change-me-to-random-secret"
+  cookie_secure: false  # Set to true only if behind HTTPS reverse proxy
+
+# Authentication (optional)
+# Uncomment to enable authentication
+# auth:
+#   type: basic
+#   users:
+#     - username: admin
+#       password_hash: ""  # bcrypt hash
+
+# Logging
+log:
+  level: info
+  format: json
+
+# Docker integration (optional)
+docker:
+  enabled: true
+  socket: /var/run/docker.sock

@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  headscale:
+    image: headscale/headscale:v0.27.0
+    container_name: headscale
+    restart: unless-stopped
+    command: serve
+    environment:
+      - TZ=UTC
+    volumes:
+      - ./config:/etc/headscale
+      - ./data:/var/lib/headscale
+    networks:
+      - headscale-network
+    ports:
+      - "127.0.0.1:8080:8080"  # Metrics
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "8000:8080"  # Local development HTTP on port 8000
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy-data:/data
+      - ./caddy-config:/config
+    networks:
+      - headscale-network
+    depends_on:
+      - headscale
+    environment:
+      - HEADSCALE_DOMAIN=${HEADSCALE_DOMAIN:-headscale.example.com}
+
+  headplane:
+    image: ghcr.io/tale/headplane:latest
+    container_name: headplane
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./headplane:/etc/headplane
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - headscale-network
+    depends_on:
+      - headscale
+    environment:
+      - TZ=UTC
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: headscale-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-headscale}
+      POSTGRES_USER: ${POSTGRES_USER:-headscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - headscale-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-headscale}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  headscale-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

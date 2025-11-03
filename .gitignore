@@ -1,0 +1,34 @@
+# Environment variables
+.env
+
+# Data directories
+data/
+caddy-data/
+caddy-config/
+
+# PostgreSQL data
+postgres-data/
+
+# Logs
+*.log
+
+# Backups
+*.sql
+*.tar.gz
+
+# MacOS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+
+# History
+.history/

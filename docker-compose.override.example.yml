@@ -1,0 +1,40 @@
+# Docker Compose Override Example
+# Copy this to docker-compose.override.yml for local development
+
+# This file demonstrates how to override the main docker-compose.yml
+# for development or testing purposes
+
+version: '3.8'
+
+services:
+  headscale:
+    # Expose gRPC port for debugging
+    ports:
+      - "50443:50443"
+
+    # Enable debug logging
+    environment:
+      - LOG_LEVEL=debug
+
+  caddy:
+    # Use HTTP only for local testing (no HTTPS)
+    # Uncomment if you want to test without SSL locally
+    # command: caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+    # Example: add additional ports
+    # ports:
+    #   - "8443:8443"
+
+    # Mount custom Caddyfile for development
+    # volumes:
+    #   - ./Caddyfile.dev:/etc/caddy/Caddyfile
+
+  # Add a debug container
+  debug:
+    image: nicolaka/netshoot
+    container_name: debug-tools
+    command: sleep infinity
+    networks:
+      - headscale-network
+    # Useful for network debugging:
+    # docker exec -it debug-tools bash

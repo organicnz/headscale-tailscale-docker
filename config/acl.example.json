@@ -1,0 +1,42 @@
+{
+  "groups": {
+    "group:admin": ["user1@headscale.net"],
+    "group:developers": ["user2@headscale.net", "user3@headscale.net"],
+    "group:servers": ["server1", "server2"]
+  },
+  "tagOwners": {
+    "tag:production": ["group:admin"],
+    "tag:development": ["group:admin", "group:developers"],
+    "tag:monitoring": ["group:admin"]
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["*"],
+      "dst": ["*:22", "*:80", "*:443"]
+    },
+    {
+      "action": "accept",
+      "src": ["group:admin"],
+      "dst": ["*:*"]
+    },
+    {
+      "action": "accept",
+      "src": ["group:developers"],
+      "dst": ["tag:development:*"]
+    },
+    {
+      "action": "accept",
+      "src": ["tag:monitoring"],
+      "dst": ["*:9090", "*:9100", "*:3000"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["group:admin"],
+      "dst": ["*"],
+      "users": ["root", "ubuntu"]
+    }
+  ]
+}

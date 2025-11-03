@@ -1,0 +1,49 @@
+{
+    # Global options
+    admin off
+    auto_https off
+    # Local development mode
+}
+
+:8080 {
+    # Enable compression
+    encode zstd gzip
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+
+    # Block search engine indexing
+    handle /robots.txt {
+        respond "User-agent: *
+Disallow: /" 200
+    }
+
+    # Reverse proxy to Headscale
+    reverse_proxy headscale:8080 {
+        # Health check
+        health_uri /health
+        health_interval 10s
+        health_timeout 5s
+
+        # Headers
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto http
+    }
+
+    # Handle Tailscale protocol
+    @tailscale {
+        path /machine/*
+        path /key*
+        path /ts2021
+    }
+
+    # Error handling
+    handle_errors {
+        respond "{err.status_code} {err.status_text}"
+    }
+}
