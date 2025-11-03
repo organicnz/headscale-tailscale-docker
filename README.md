@@ -46,6 +46,15 @@ All services are **running and operational**:
 - Docker and Docker Compose installed
 - For local testing: Nothing else needed!
 - For production: A domain name and open ports 80/443
+- **Recommended**: [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks (prevents committing secrets)
+  ```bash
+  # macOS
+  brew install lefthook
+
+  # After clone
+  lefthook install
+  ```
+  See [LEFTHOOK.md](LEFTHOOK.md) for details
 
 ## 🌐 Access Points
 
@@ -456,6 +465,7 @@ docker exec headscale headscale nodes expire --all-offline
 4. **Regular updates** - Keep Docker images updated
 5. **Monitor logs** - Check logs regularly for suspicious activity
 6. **Backup regularly** - Automate database backups
+7. **Use Git hooks** - Install Lefthook to prevent committing secrets (see [LEFTHOOK.md](LEFTHOOK.md))
 
 ## 🏗️ Architecture
 

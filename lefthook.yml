@@ -1,0 +1,174 @@
+# Lefthook configuration for Headscale Docker setup
+# Install: brew install lefthook (macOS) or npm install -g lefthook
+# Setup: lefthook install
+
+pre-commit:
+  parallel: true
+
+  commands:
+    # Check for exposed secrets
+    secrets-scan:
+      tags: security
+      run: |
+        echo "🔍 Scanning for exposed secrets..."
+
+        # Check for API keys, tokens, and passwords in staged files
+        if git diff --cached --name-only | xargs grep -nHE "(api_key|password|secret|token|key).*[:=].*[a-zA-Z0-9]{20,}" 2>/dev/null | grep -v ".example" | grep -v "your_.*_here" | grep -v "changeme" | grep -v "HEADPLANE_API_KEY=\$" | grep -v "HEADPLANE_COOKIE_SECRET=\$" | grep -v "Generate with:" | grep -v "\[REDACTED\]" | grep -v "YOUR_"; then
+          echo "❌ ERROR: Potential secrets detected in staged files!"
+          echo "Please remove hardcoded secrets and use environment variables instead."
+          exit 1
+        fi
+
+        echo "✅ No secrets detected"
+
+    # Ensure .env is not committed
+    env-check:
+      tags: security
+      glob: ".env"
+      run: |
+        if git diff --cached --name-only | grep -q "^\.env$"; then
+          echo "❌ ERROR: .env file should not be committed!"
+          echo "Please unstage it: git restore --staged .env"
+          exit 1
+        fi
+        echo "✅ .env is not being committed"
+
+    # Check that headplane/config.yaml is not committed
+    headplane-config-check:
+      tags: security
+      glob: "headplane/config.yaml"
+      run: |
+        if git diff --cached --name-only | grep -q "^headplane/config.yaml$"; then
+          echo "❌ ERROR: headplane/config.yaml contains secrets and should not be committed!"
+          echo "Please unstage it: git restore --staged headplane/config.yaml"
+          echo "Use headplane/config.yaml.example instead"
+          exit 1
+        fi
+        echo "✅ headplane/config.yaml is not being committed"
+
+    # Check for .DS_Store files
+    ds-store-check:
+      tags: cleanup
+      glob: ".DS_Store"
+      run: |
+        if git diff --cached --name-only | grep -q "\.DS_Store"; then
+          echo "❌ ERROR: .DS_Store files should not be committed"
+          echo "Removing .DS_Store files..."
+          git diff --cached --name-only | grep "\.DS_Store" | xargs git restore --staged
+          exit 1
+        fi
+        echo "✅ No .DS_Store files"
+
+    # Verify example files exist for sensitive configs
+    example-files-check:
+      tags: documentation
+      run: |
+        echo "🔍 Checking for example files..."
+
+        if [ ! -f ".env.example" ]; then
+          echo "❌ WARNING: .env.example not found"
+        fi
+
+        if [ ! -f "headplane/config.yaml.example" ]; then
+          echo "❌ WARNING: headplane/config.yaml.example not found"
+        fi
+
+        echo "✅ Example files present"
+
+    # YAML syntax validation
+    yaml-lint:
+      tags: validation
+      glob: "*.{yml,yaml}"
+      run: |
+        echo "🔍 Validating YAML files..."
+        # Check basic YAML syntax using Python (available on most systems)
+        for file in {staged_files}; do
+          if [ -f "$file" ]; then
+            python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null || {
+              echo "❌ ERROR: Invalid YAML in $file"
+              exit 1
+            }
+          fi
+        done
+        echo "✅ YAML files are valid"
+
+pre-push:
+  parallel: true
+
+  commands:
+    # Final security check before push
+    final-secrets-scan:
+      tags: security
+      run: |
+        echo "🔍 Final security scan before push..."
+
+        # Check all tracked files for secrets
+        if git ls-files | xargs grep -nHE "(api_key|password|secret|token).*[:=].*[a-zA-Z0-9]{20,}" 2>/dev/null | grep -v ".example" | grep -v "your_.*_here" | grep -v "changeme" | grep -v "HEADPLANE_API_KEY=\$" | grep -v "HEADPLANE_COOKIE_SECRET=\$" | grep -v "Generate with:" | grep -v "\[REDACTED\]" | grep -v "YOUR_"; then
+          echo "❌ ERROR: Secrets detected in tracked files!"
+          echo "This will be exposed in your public repository!"
+          exit 1
+        fi
+
+        echo "✅ No secrets detected in tracked files"
+
+    # Verify .gitignore is comprehensive
+    gitignore-check:
+      tags: security
+      run: |
+        echo "🔍 Checking .gitignore..."
+
+        required_patterns=(".env" "headplane/config.yaml" "data/" "*.log")
+
+        for pattern in "${required_patterns[@]}"; do
+          if ! grep -q "$pattern" .gitignore; then
+            echo "❌ WARNING: $pattern not in .gitignore"
+          fi
+        done
+
+        echo "✅ .gitignore check complete"
+
+    # Check for large files
+    large-files-check:
+      tags: optimization
+      run: |
+        echo "🔍 Checking for large files..."
+
+        # Find files larger than 1MB
+        large_files=$(git diff --cached --name-only | xargs -I {} find {} -size +1M 2>/dev/null || true)
+
+        if [ ! -z "$large_files" ]; then
+          echo "⚠️  WARNING: Large files detected:"
+          echo "$large_files"
+          echo "Consider using Git LFS or excluding from repository"
+        fi
+
+        echo "✅ Large files check complete"
+
+commit-msg:
+  commands:
+    # Validate commit message format
+    commit-msg-format:
+      tags: quality
+      run: |
+        commit_msg=$(cat {1})
+
+        # Check if commit message is not empty
+        if [ -z "$(echo $commit_msg | tr -d '[:space:]')" ]; then
+          echo "❌ ERROR: Commit message cannot be empty"
+          exit 1
+        fi
+
+        # Check minimum length (at least 10 characters)
+        if [ ${#commit_msg} -lt 10 ]; then
+          echo "❌ ERROR: Commit message too short (minimum 10 characters)"
+          exit 1
+        fi
+
+        echo "✅ Commit message format OK"
+
+# Skip hooks for specific commands if needed
+skip_output:
+  - meta
+  - summary
+
+colors: true
