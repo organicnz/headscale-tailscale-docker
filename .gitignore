@@ -1,6 +1,9 @@
 # Environment variables
 .env
 
+# Headplane config with secrets
+headplane/config.yaml
+
 # Data directories
 data/
 caddy-data/
@@ -15,6 +18,7 @@ postgres-data/
 # Backups
 *.sql
 *.tar.gz
+backups/
 
 # MacOS
 .DS_Store

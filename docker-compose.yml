@@ -41,7 +41,7 @@ services:
     container_name: headplane
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./headplane:/etc/headplane
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -51,9 +51,11 @@ services:
       - headscale
     environment:
       - TZ=UTC
+      - HEADPLANE_API_KEY=${HEADPLANE_API_KEY}
+      - HEADPLANE_COOKIE_SECRET=${HEADPLANE_COOKIE_SECRET}
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: headscale-db
     restart: unless-stopped
     environment:
