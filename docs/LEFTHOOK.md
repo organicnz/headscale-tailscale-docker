@@ -146,23 +146,52 @@ LEFTHOOK_EXCLUDE=secrets-scan git commit -m "Update docs"
 
 ## Configuration
 
-All hook configuration is in `lefthook.yml`. You can customize:
+All hook configuration is in `lefthook.yml`. Hook scripts are in `scripts/lefthook/`.
 
-- Add new checks
-- Modify existing patterns
-- Enable/disable specific hooks
-- Add file-specific validations
+### Project Structure
+
+```
+.
+├── lefthook.yml                    # Hook configuration
+├── scripts/
+│   └── lefthook/
+│       ├── secrets-scan.sh         # Secrets detection
+│       ├── env-check.sh            # .env protection
+│       ├── headplane-config-check.sh
+│       ├── ds-store-check.sh
+│       ├── example-files-check.sh
+│       ├── yaml-lint.sh
+│       ├── final-secrets-scan.sh
+│       ├── gitignore-check.sh
+│       ├── large-files-check.sh
+│       ├── commit-msg-format.sh
+│       └── README.md               # Script documentation
+```
+
+### Customization
+
+You can customize in two ways:
+
+1. **Modify hook scripts** in `scripts/lefthook/`
+2. **Update lefthook.yml** to add/remove hooks
 
 ### Example: Add a new check
 
+Create a new script:
+```bash
+# scripts/lefthook/my-check.sh
+#!/bin/bash
+echo "Running custom validation..."
+# Your custom script here
+```
+
+Add to `lefthook.yml`:
 ```yaml
 pre-commit:
   commands:
     my-custom-check:
       tags: validation
-      run: |
-        echo "Running custom validation..."
-        # Your custom script here
+      run: bash scripts/lefthook/my-check.sh
 ```
 
 ## Troubleshooting

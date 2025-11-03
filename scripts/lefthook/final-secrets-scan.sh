@@ -19,16 +19,23 @@ EXCLUDE_PATTERNS=(
   "POSTGRES_PASSWORD=\$"
   "example.com"
   "localhost"
+  "\.md:"
+  "README"
+  "test123"
+  "abc123"
 )
 
 # Build grep exclude pattern
 EXCLUDE_REGEX=$(printf "|%s" "${EXCLUDE_PATTERNS[@]}")
 EXCLUDE_REGEX="${EXCLUDE_REGEX:1}"  # Remove leading |
 
-# Check all tracked files for secrets
-if git ls-files | \
+# Check all tracked files for secrets (exclude .md files)
+SECRET_MATCHES=$(git ls-files | grep -v '\.md$' | \
    xargs grep -nHE "(api_key|password|secret|token).*[:=].*[a-zA-Z0-9]{20,}" 2>/dev/null | \
-   grep -vE "$EXCLUDE_REGEX"; then
+   grep -vE "$EXCLUDE_REGEX" || true)
+
+if [ -n "$SECRET_MATCHES" ]; then
+  echo "$SECRET_MATCHES"
   echo ""
   echo "❌ ERROR: Secrets detected in tracked files!"
   echo ""

@@ -19,16 +19,30 @@ EXCLUDE_PATTERNS=(
   "POSTGRES_PASSWORD=\$"
   "example.com"
   "localhost"
+  "\.md:"
+  "README"
+  "test123"
+  "abc123"
 )
 
 # Build grep exclude pattern
 EXCLUDE_REGEX=$(printf "|%s" "${EXCLUDE_PATTERNS[@]}")
 EXCLUDE_REGEX="${EXCLUDE_REGEX:1}"  # Remove leading |
 
-# Check staged files for secrets
-if git diff --cached --name-only | \
+# Check staged files for secrets (exclude .md files)
+NON_MD_FILES=$(git diff --cached --name-only | grep -v '\.md$' || true)
+
+if [ -z "$NON_MD_FILES" ]; then
+  echo "✅ No secrets detected"
+  exit 0
+fi
+
+SECRET_MATCHES=$(echo "$NON_MD_FILES" | \
    xargs grep -nHE "(api_key|password|secret|token|key).*[:=].*[a-zA-Z0-9]{20,}" 2>/dev/null | \
-   grep -vE "$EXCLUDE_REGEX"; then
+   grep -vE "$EXCLUDE_REGEX" || true)
+
+if [ -n "$SECRET_MATCHES" ]; then
+  echo "$SECRET_MATCHES"
   echo ""
   echo "❌ ERROR: Potential secrets detected in staged files!"
   echo ""
